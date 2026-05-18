@@ -17,8 +17,6 @@
  *   - O arquivo de log é lido inteiramente para um vetor de linhas em memória.
  *   - O processamento do vetor é paralelizado com #pragma omp parallel for.
  *   - O incremento de hit_count é protegido por #pragma omp atomic update,
- *     que mapeia diretamente para instruções atômicas de hardware (LOCK XADD
- *     em x86), evitando o overhead de mutexes/seções críticas.
  */
 
 #define MAX_LINE_LENGTH 1024
@@ -41,7 +39,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // 2. Carrega manifest.txt — fase sequencial obrigatória
+    // 2. Carrega manifest.txt
     printf("Carregando manifest.txt...\n");
     FILE *manifest = fopen("manifest.txt", "r");
     if (!manifest) {

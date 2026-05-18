@@ -14,9 +14,8 @@
  * Estratégia:
  *   - Idêntica ao atomic em estrutura, mas o incremento é protegido por
  *     uma seção crítica global (#pragma omp critical).
- *   - Todas as threads disputam o MESMO lock implícito, o que provoca
- *     serialização forte — especialmente sob alta contenção (hotspots).
- */
+ *   - Todas as threads disputam o mesmo lock implícito, o que provoca
+ *     serialização forte */
 
 #define MAX_LINE_LENGTH 1024
 #define TABLE_SIZE      131071
@@ -104,7 +103,7 @@ int main(int argc, char *argv[]) {
     printf("Total de linhas carregadas: %zu\n", num_lines);
 
     
-    // 4. Processa em paralelo — critical (granularidade grossa)
+    // 4. Processa em paralelo critical
     printf("Processando em paralelo (critical) com %d thread(s)...\n",
            omp_get_max_threads());
 
