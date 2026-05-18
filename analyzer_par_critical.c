@@ -21,8 +21,6 @@
 #define MAX_LINE_LENGTH 1024
 #define TABLE_SIZE      131071
 
-clock_gettime(CLOCK_MONOTONIC, &t_start);
-
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "Uso: %s <arquivo_de_log>\n", argv[0]);
@@ -111,6 +109,8 @@ int main(int argc, char *argv[]) {
            omp_get_max_threads());
 
     struct timespec t_start, t_end;
+
+    clock_gettime(CLOCK_MONOTONIC, &t_start);
 
     #pragma omp parallel for schedule(dynamic, 4096) private(line)
     for (size_t i = 0; i < num_lines; i++) {
