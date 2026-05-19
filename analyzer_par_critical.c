@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     char line[MAX_LINE_LENGTH];
 
     
-    // 1. Tabela Hash
+    //tabela Hash
     printf("Inicializando a Tabela Hash (size=%d)...\n", TABLE_SIZE);
     HashTable *ht = ht_create(TABLE_SIZE);
     if (!ht) {
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     }
 
     
-    // 2. Manifest
+    //manifest
     printf("Carregando manifest.txt...\n");
     FILE *manifest = fopen("manifest.txt", "r");
     if (!manifest) {
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     fclose(manifest);
 
     
-    // 3. Carrega log em memória
+    //carrega log em memória
     printf("Lendo log em memória: %s...\n", log_filename);
     FILE *log_file = fopen(log_filename, "r");
     if (!log_file) {
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     printf("Total de linhas carregadas: %zu\n", num_lines);
 
     
-    // 4. Processa em paralelo critical
+    //processa em paralelo critical
     printf("Processando em paralelo (critical) com %d thread(s)...\n",
            omp_get_max_threads());
 
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
         CacheNode *node = ht_get(ht, url_extraida);
         if (node != NULL) {
 
-             // Seção crítica global, apenas UMA thread por vez pode entrar,independentemente de qual nó está sendo acessado.
+             //seção crítica global, apenas UMA thread por vez pode entrar, independentemente de qual nó está sendo acessado.
             #pragma omp critical
             {
                 node->hit_count++;
@@ -145,8 +145,7 @@ int main(int argc, char *argv[]) {
     printf("Tempo de processamento: %.4f segundos\n", elapsed);
 
     
-    // 5. Salva e libera
-    
+    //salva e libera 
     for (size_t i = 0; i < num_lines; i++) free(lines[i]);
     free(lines);
 
