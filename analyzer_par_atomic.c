@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     const char *log_filename = argv[1];
     char line[MAX_LINE_LENGTH];
 
-    // 1. Inicializa a Tabela Hash
+    //inicializa a Tabela Hash
     printf("Inicializando a Tabela Hash (size=%d)...\n", TABLE_SIZE);
     HashTable *ht = ht_create(TABLE_SIZE);
     if (!ht) {
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // 2. Carrega manifest.txt
+    //carrega manifest.txt
     printf("Carregando manifest.txt...\n");
     FILE *manifest = fopen("manifest.txt", "r");
     if (!manifest) {
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(manifest);
 
-    // 3. Carrega todas as linhas do log em memória, vetor de ponteiros
+    //carrega todas as linhas do log em memória, vetor de ponteiros
     printf("Lendo log em memória: %s...\n", log_filename);
     FILE *log_file = fopen(log_filename, "r");
     if (!log_file) {
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Alocamento dinamico
+    //alocamento dinamico
     size_t capacity = 1024 * 1024; // começa com 1 M de slots
     size_t num_lines = 0;
     char **lines = malloc(capacity * sizeof(char *));
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
             if (!tmp) {
                 perror("Erro ao realocar vetor de linhas");
                 fclose(log_file);
-                // lbera o que já foi alocado
+                //lbera o que já foi alocado
                 for (size_t i = 0; i < num_lines; i++) free(lines[i]);
                 free(lines);
                 ht_destroy(ht);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     fclose(log_file);
     printf("Total de linhas carregadas: %zu\n", num_lines);
 
-    // 4. Processa as linhas em paralelo atomic update 
+    //processa as linhas em paralelo atomic update 
     printf("Processando em paralelo (atomic) com %d thread(s)...\n",
            omp_get_max_threads());
 
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
         CacheNode *node = ht_get(ht, url_extraida);
         if (node != NULL) {
 
-            //Garante que o incremento seja uma operação indivisível, threads que acessam nós DIFERENTES não se bloqueiam.
+            //garante que o incremento seja uma operação indivisível, threads que acessam nós DIFERENTES não se bloqueiam.
             #pragma omp atomic update
             node->hit_count++;
         }
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
                      (t_end.tv_nsec - t_start.tv_nsec) / 1e9;
     printf("Tempo de processamento: %.4f segundos\n", elapsed);
 
-    // 5. Libera vetor de linhas, salva resultados
+    //libera vetor de linhas, salva resultados
     for (size_t i = 0; i < num_lines; i++) free(lines[i]);
     free(lines);
 
