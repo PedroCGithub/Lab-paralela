@@ -9,26 +9,15 @@
 #include <omp.h>
 #include "hash_table.h"
 
-/*
- * analyzer_par_lock.c Versão paralela com Bucket Locking
- *
- * Estratégia:
- *   - Um array de omp_lock_t com exatamente TABLE_SIZE posições é criado,
- *     um lock por bucket da tabela hash.
- *   - Ao atualizar hit_count, a thread:
- *       1. Calcula o índice do bucket (mesma função hash usada pela tabela)
- *       2. Adquire omp_lock_t[bucket]
- *       3. Atualiza o contador
- *       4. Libera o lock
- *   - Threads que acessam URLs mapeadas para buckets DIFERENTES executam
- *     em paralelo sem nenhuma contenção entre si.
- */
+
+//utiliza um lock independente para cada bucket da tabela hash (fine-grained locking).
+//permite que threads atualizem contadores em paralelo e sem contenção ao acessar buckets distintos.
 
 #define MAX_LINE_LENGTH 1024
 #define TABLE_SIZE      131071
 
-// Replica da função hash interna do hash_table.c 
-// Necessária para calcular o índice do bucket externamente.
+//replica da função hash interna do hash_table.c 
+//necessária para calcular o índice do bucket externamente.
 
 static size_t hash_djb2_local(const char *str, size_t size) {
     unsigned long hash = 5381;
@@ -47,7 +36,7 @@ int main(int argc, char *argv[]) {
     const char *log_filename = argv[1];
     char line[MAX_LINE_LENGTH];
 
-    // 1. Tabela Hash
+    //tabela Hash
     printf("Inicializando a Tabela Hash (size=%d)...\n", TABLE_SIZE);
     HashTable *ht = ht_create(TABLE_SIZE);
     if (!ht) {
@@ -55,7 +44,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // 2. Manifest
+    //manifest
     printf("Carregando manifest.txt...\n");
     FILE *manifest = fopen("manifest.txt", "r");
     if (!manifest) {
@@ -70,7 +59,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(manifest);
 
-    // 3. Inicializa o array de locks (um por bucket)
+    //inicializa o array de locks (um por bucket)
     printf("Inicializando %d bucket locks...\n", TABLE_SIZE);
     omp_lock_t *locks = malloc(sizeof(omp_lock_t) * TABLE_SIZE);
     if (!locks) {
@@ -81,7 +70,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < TABLE_SIZE; i++)
         omp_init_lock(&locks[i]);
 
-    // 4. Carrega log em memória
+    //carrega log em memória
     printf("Lendo log em memória: %s...\n", log_filename);
     FILE *log_file = fopen(log_filename, "r");
     if (!log_file) {
@@ -136,7 +125,7 @@ int main(int argc, char *argv[]) {
     fclose(log_file);
     printf("Total de linhas carregadas: %zu\n", num_lines);
 
-    // 5. Processa em paralelo — bucket locking
+    //processa em paralelo — bucket locking
     printf("Processando em paralelo (bucket lock) com %d thread(s)...\n",
            omp_get_max_threads());
 
@@ -160,14 +149,9 @@ int main(int argc, char *argv[]) {
         memcpy(url_extraida, inicio, tamanho);
         url_extraida[tamanho] = '\0';
 
-        /*
-         * Fluxo do bucket locking
-         *   1. Calcula o bucket da URL
-         *   2. Adquire o lock daquele bucket
-         *   3. Busca o nó e incrementa hit_count
-         *   4. Libera o lock
-         * Threads em buckets diferentes NÃO se bloqueiam mutuamente.
-         */
+        //trava apenas o bucket correspondente à URL durante a busca e atualização.
+        //permite que operações em buckets diferentes ocorram simultaneamente sem bloqueios.
+
         size_t bucket = hash_djb2_local(url_extraida, TABLE_SIZE);
 
         omp_set_lock(&locks[bucket]);
@@ -182,7 +166,7 @@ int main(int argc, char *argv[]) {
                      (t_end.tv_nsec - t_start.tv_nsec) / 1e9;
     printf("Tempo de processamento: %.4f segundos\n", elapsed);
 
-    // 6. Destrói locks, salva e libera
+    //destrói locks, salva e libera
     for (int i = 0; i < TABLE_SIZE; i++)
         omp_destroy_lock(&locks[i]);
     free(locks);
