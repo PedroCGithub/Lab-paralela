@@ -8,13 +8,8 @@
 #include <time.h>
 #include "hash_table.h"
 
-/*
- * analyzer_seq.c versão sequencial
- *   1. Cria a tabela hash
- *   2. Lê manifest.txt e popula a tabela
- *   3. Lê o log linha a linha, extrai a URL e incrementa hit_count
- *   4. Salva results.csv
- */
+//execução sequencial: inicializa a tabela hash com o manifesto e processa os logs linearmente.
+//contabiliza os acessos de cada URL e exporta o relatório final para results.csv.
 
 #define MAX_LINE_LENGTH 1024
 
@@ -30,7 +25,7 @@ int main(int argc, char *argv[]) {
     const char *log_filename = argv[1];
     char line[MAX_LINE_LENGTH];
 
-    // 1. Inicializa a Tabela Hash 
+    //inicializa a Tabela Hash 
     printf("Inicializando a Tabela Hash (size=%d)...\n", TABLE_SIZE);
     HashTable *ht = ht_create(TABLE_SIZE);
     if (!ht) {
@@ -38,7 +33,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // 2. Lê manifest.txt e popula a tabela
+    //le manifest.txt e popula a tabela
     printf("Carregando manifest.txt...\n");
     FILE *manifest = fopen("manifest.txt", "r");
     if (!manifest) {
@@ -54,7 +49,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(manifest);
 
-    // 3. Lê o log e processa os acessos
+    //le o log e processa os acessos
     printf("Processando log: %s...\n", log_filename);
     FILE *log_file = fopen(log_filename, "r");
     if (!log_file) {
@@ -69,7 +64,7 @@ int main(int argc, char *argv[]) {
     while (fgets(line, sizeof(line), log_file)) {
         char url_extraida[256];
 
-        // Extração da URL: "GET <url> HTTP"
+        //extrai URL: "GET <url> HTTP"
         char *inicio = strstr(line, "GET ");
         if (inicio == NULL) continue;
         inicio += 4; // pula "GET "
@@ -84,7 +79,7 @@ int main(int argc, char *argv[]) {
         memcpy(url_extraida, inicio, tamanho);
         url_extraida[tamanho] = '\0';
 
-        // busca e incrementa
+        //busca e incrementa
         CacheNode *node = ht_get(ht, url_extraida);
         if (node != NULL)
             node->hit_count++;
@@ -96,7 +91,7 @@ int main(int argc, char *argv[]) {
                      (t_end.tv_nsec - t_start.tv_nsec) / 1e9;
     printf("Tempo de processamento: %.4f segundos\n", elapsed);
 
-    // 4. Salva resultados e libera memória
+    //salva resultados e libera memória
     printf("Salvando results.csv...\n");
     ht_save_results(ht, "results.csv");
     ht_destroy(ht);
