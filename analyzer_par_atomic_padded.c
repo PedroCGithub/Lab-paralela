@@ -8,11 +8,8 @@
 #include <time.h>
 #include <omp.h>
 
-/*
- * analyzer_par_atomic_padded.c
- * Replica da versão atomic, mas utiliza uma estrutura CacheNode
- * com padding para eliminar o efeito de false sharing.
- */
+//versão paralela com operações atômicas utilizando uma estrutura CacheNode com padding.
+//o preenchimento isola os nós na memória cache, eliminando gargalos causados por false sharing.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,12 +21,12 @@
 #define TABLE_SIZE      131071
 
 
-// CacheNode com padding 
+//cacheNode com padding 
 typedef struct CacheNode {
     char              *url;
     long               hit_count;
     struct CacheNode  *next;
-    long               padding[5]; // alinha cada nó em 64 bytes
+    long               padding[5]; //alinha cada nó em 64 bytes
 } CacheNode;
 
 typedef struct {
@@ -37,7 +34,7 @@ typedef struct {
     CacheNode **table;
 } HashTable;
 
-//Funções auxiliares
+//funções auxiliares
 
 static size_t hash_djb2(const char *str, size_t size) {
     unsigned long hash = 5381;
@@ -122,11 +119,11 @@ int main(int argc, char *argv[]) {
     printf("=== analyzer_par_atomic_padded (Experimento C: False Sharing) ===\n");
     printf("sizeof(CacheNode) = %zu bytes\n", sizeof(CacheNode));
 
-    // 1. Tabela Hash
+    //tabela Hash
     printf("Inicializando a Tabela Hash (size=%d)...\n", TABLE_SIZE);
     HashTable *ht = ht_create(TABLE_SIZE);
 
-    // 2. Manifest
+    //manifest
     printf("Carregando manifest.txt...\n");
     FILE *manifest = fopen("manifest.txt", "r");
     if (!manifest) { perror("manifest.txt"); ht_destroy(ht); return 1; }
@@ -136,7 +133,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(manifest);
 
-    // 3. Carrega log em memória
+    //carrega log em memória
     printf("Lendo log em memória: %s...\n", log_filename);
     FILE *log_file = fopen(log_filename, "r");
     if (!log_file) { perror("log"); ht_destroy(ht); return 1; }
@@ -157,7 +154,7 @@ int main(int argc, char *argv[]) {
     fclose(log_file);
     printf("Total de linhas carregadas: %zu\n", num_lines);
 
-    // 4. Processa em paralelo
+    //processa em paralelo
     printf("Processando em paralelo (atomic + padded) com %d thread(s)...\n",
            omp_get_max_threads());
 
@@ -193,7 +190,7 @@ int main(int argc, char *argv[]) {
                      (t_end.tv_nsec - t_start.tv_nsec) / 1e9;
     printf("Tempo de processamento: %.4f segundos\n", elapsed);
 
-    // 5. Salva e libera
+    //salva e libera
     for (size_t i = 0; i < num_lines; i++) free(lines[i]);
     free(lines);
 
