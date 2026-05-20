@@ -1,3 +1,7 @@
+#Henrique Ferreira Marciano RA:10439797
+#Pedro Casas Pequeno Junior RA:10437031
+#Pedro Henrique Saraiva Arruda RA:10437747
+
 CC     = gcc
 CFLAGS = -O2 -fopenmp -Wall -Wextra
 
